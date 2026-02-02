@@ -1,0 +1,10 @@
+chonkie==1.5.2
+langchain_core==1.2.7
+langchain_undatasio==1.0.1
+llama_parse==0.6.91
+plotly==6.5.2
+pydantic==2.12.5
+python-dotenv==1.2.1
+streamlit==1.53.0
+openai==2.16.0
+pandas==2.3.0
