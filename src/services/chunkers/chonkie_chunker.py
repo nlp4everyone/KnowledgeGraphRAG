@@ -26,22 +26,23 @@ class ChonkieChunkingService:
         """Create the Chonkie Chunker based on configuration."""
         if self.config.strategy == ChunkingStrategy.TOKEN:
             # Token chunker
-            return TokenChunker(tokenizer=self.config.tokenizer,
+            chunker = TokenChunker(tokenizer=self.config.tokenizer,
                                 chunk_size=self.config.chunk_size,
                                 chunk_overlap=self.config.chunk_overlap)
         elif self.config.strategy == ChunkingStrategy.SENTENCE:
             # Sentence chunker
-            return SentenceChunker(tokenizer=self.config.tokenizer,
+            chunker = SentenceChunker(tokenizer=self.config.tokenizer,
                                    chunk_size=self.config.chunk_size,
                                    chunk_overlap=self.config.chunk_overlap,
                                    min_sentences_per_chunk=self.config.min_sentences_per_chunk,
                                    min_characters_per_sentence=self.config.min_characters_per_sentence)
         else:
             # Recursive chunker
-            return RecursiveChunker(tokenizer=self.config.tokenizer,
+            chunker = RecursiveChunker(tokenizer=self.config.tokenizer,
                                     chunk_size=self.config.chunk_size,
                                     rules=self.config.rules,
                                     min_characters_per_chunk=self.config.min_characters_per_chunk)
+        return chunker
 
     def split_text(self, text: str) -> List[str]:
         """Split text into chunks.
@@ -52,4 +53,5 @@ class ChonkieChunkingService:
         Returns:
             List of text chunks
         """
-        return [chunk.text for chunk in self._chunker.chunk(text)]
+        chunks = [chunk.text for chunk in self._chunker.chunk(text)]
+        return chunks

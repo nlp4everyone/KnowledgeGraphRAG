@@ -1,4 +1,6 @@
 # Inherit
+import logging
+
 from ..base import BaseTextParser
 # Main component
 from llama_parse import LlamaParse
@@ -9,6 +11,11 @@ from llama_index.core.schema import Document
 from llama_cloud_services.parse.utils import ResultType
 # Typing
 from typing import List, Tuple
+
+# Check the key existance
+if not LLAMAPARSE_API_KEY:
+    raise ValueError("Llamaparse key must be provided!")
+
 
 class LlamaParseParser(BaseTextParser):
     def __init__(self,
