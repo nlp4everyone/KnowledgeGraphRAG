@@ -27,21 +27,21 @@ class ChonkieChunkingService:
         if self.config.strategy == ChunkingStrategy.TOKEN:
             # Token chunker
             chunker = TokenChunker(tokenizer=self.config.tokenizer,
-                                chunk_size=self.config.chunk_size,
-                                chunk_overlap=self.config.chunk_overlap)
+                                   chunk_size=self.config.chunk_size,
+                                   chunk_overlap=self.config.chunk_overlap)
         elif self.config.strategy == ChunkingStrategy.SENTENCE:
             # Sentence chunker
             chunker = SentenceChunker(tokenizer=self.config.tokenizer,
-                                   chunk_size=self.config.chunk_size,
-                                   chunk_overlap=self.config.chunk_overlap,
-                                   min_sentences_per_chunk=self.config.min_sentences_per_chunk,
-                                   min_characters_per_sentence=self.config.min_characters_per_sentence)
+                                      chunk_size=self.config.chunk_size,
+                                      chunk_overlap=self.config.chunk_overlap,
+                                      min_sentences_per_chunk=self.config.min_sentences_per_chunk,
+                                      min_characters_per_sentence=self.config.min_characters_per_sentence)
         else:
             # Recursive chunker
             chunker = RecursiveChunker(tokenizer=self.config.tokenizer,
-                                    chunk_size=self.config.chunk_size,
-                                    rules=self.config.rules,
-                                    min_characters_per_chunk=self.config.min_characters_per_chunk)
+                                       chunk_size=self.config.chunk_size,
+                                       rules=self.config.rules,
+                                       min_characters_per_chunk=self.config.min_characters_per_chunk)
         return chunker
 
     def split_text(self, text: str) -> List[str]:
