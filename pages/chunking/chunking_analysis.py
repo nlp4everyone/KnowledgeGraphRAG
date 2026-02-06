@@ -1,29 +1,35 @@
 # Streamlit
-import logging
-
 import streamlit as st
 # Chunking
-from src.services.chunkers.chonkie_chunker import ChonkieChunkingService, ChonkieChunkingConfig
+from src.services.chunkers.chonkie_chunker import ChonkieChunkingService
+from src.schemas.chunking.chunking_config import ChonkieChunkingConfig
 # Plotly
 import plotly.express as px
 # Dependencies
 from io import StringIO
 import asyncio, tempfile, os
+# Loader
+from src.utils.config_loader import TomlConfigLoader
 
+# Define config loader
+config_loader = TomlConfigLoader()
+# Load chunking config
+chunking_config = config_loader.get_chunking_config()
+# Load pdf parser config
+pdfparser_config = config_loader.get_pdfparser_config()
 
 def get_pdf_parser():
     if 'pdf_parser' not in st.session_state:
         try:
             from src.services.parsers.pdf import LlamaParseParser
-            return LlamaParseParser()
+            return LlamaParseParser(num_worker = int(pdfparser_config.get("llamaparse").get("num_workers")),
+                                    verbose = bool(pdfparser_config.get("llamaparse").get("verbose")))
         except ValueError as e:
             st.error("Please ensure LLAMAPARSE_API_KEY is set in your .env file")
             return None
-            # st.stop()
         except Exception as e:
             st.error(f"Failed to initialize PDF parser: {str(e)}")
             return None
-            # st.stop()
     return None
 
 st.set_page_config(
@@ -80,7 +86,6 @@ if uploaded_file is not None:
                             content, documents = asyncio.run(pdf_parser.parse(file_input=temp_file_path, lazy_load=False))
                             st.session_state.text_content = content
                             st.session_state.file_processed = True
-                            st.success(f"Successfully parsed PDF. Content length: {len(content)} characters")
                     
                 except Exception as e:
                     st.error(f"Error processing PDF file: {str(e)}")
@@ -120,18 +125,18 @@ if uploaded_file is not None:
 
             with col1:
                 chunk_size = st.slider("Chunk Size",
-                                       min_value = 256,
-                                       max_value = 5048,
-                                       value = 1024,
-                                       step = 256,
+                                       min_value = chunking_config.get("chunking").get("min_chunk_size"),
+                                       max_value = chunking_config.get("chunking").get("max_chunk_size"),
+                                       value = chunking_config.get("chunking").get("default_chunk_size"),
+                                       step = chunking_config.get("chunking").get("chunk_size_step"),
                                        help = "Size of each chunk in characters")
 
             with col2:
                 chunk_overlap = st.slider("Chunk Overlap",
-                                          min_value=0,
-                                          max_value=512,
-                                          value=128,
-                                          step=128,
+                                          min_value = chunking_config.get("chunking").get("min_chunk_overlap"),
+                                          max_value = chunking_config.get("chunking").get("max_chunk_overlap"),
+                                          value = chunking_config.get("chunking").get("default_chunk_overlap"),
+                                          step = chunking_config.get("chunking").get("chunk_overlap_step"),
                                           help="Overlap between chunks in characters")
 
             # Display configuration
@@ -143,10 +148,13 @@ if uploaded_file is not None:
                 if st.session_state.text_content is None or len(st.session_state.text_content) == 0:
                     st.error("Cannot process chunks: No text content available.")
                     st.stop()
-                
+
                 # Import chunking service
                 chunker_service = ChonkieChunkingService(config=ChonkieChunkingConfig(chunk_size = chunk_size,
-                                                                                      chunk_overlap = chunk_overlap))
+                                                                                      chunk_overlap = chunk_overlap,
+                                                                                      min_characters_per_chunk = chunking_config.get("chonkie").get("min_characters_per_chunk"),
+                                                                                      min_sentences_per_chunk = chunking_config.get("chonkie").get("min_sentences_per_chunk"),
+                                                                                      tokenizer = chunking_config.get("chonkie").get("tokenizer")))
                 
                 # Chunking
                 chunk_texts = chunker_service.split_text(st.session_state.text_content)

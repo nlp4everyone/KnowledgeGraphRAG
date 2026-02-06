@@ -25,9 +25,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create necessary directories
-# RUN mkdir -p pages/__pycache__ src/core/__pycache__ src/schemas/chunking/__pycache__ src/services/chunkers/__pycache__ src/services/parsers/__pycache__ src/services/parsers/pdf/__pycache__
-
 # Expose port
 EXPOSE 8501
 
