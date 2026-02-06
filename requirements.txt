@@ -6,5 +6,6 @@ plotly==6.5.2
 pydantic==2.12.5
 python-dotenv==1.2.1
 streamlit==1.53.0
+toml==0.10.2
 openai==2.16.0
 pandas==2.3.0

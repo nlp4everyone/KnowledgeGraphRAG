@@ -1,0 +1,3 @@
+[llamaparse]
+num_workers = 4
+verbose = false

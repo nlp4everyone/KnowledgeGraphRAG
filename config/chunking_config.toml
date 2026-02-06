@@ -1,0 +1,16 @@
+[chunking]
+min_chunk_size = 256
+max_chunk_size = 5048
+chunk_size_step = 256
+default_chunk_size = 2048
+min_chunk_overlap = 0
+max_chunk_overlap = 512
+chunk_overlap_step = 128
+default_chunk_overlap = 256
+
+[chonkie]
+min_characters_per_chunk = 24
+min_sentences_per_chunk = 1
+min_characters_per_sentence = 12
+tokenizer = "character"
+
