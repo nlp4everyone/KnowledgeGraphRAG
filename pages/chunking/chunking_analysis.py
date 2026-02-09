@@ -119,113 +119,148 @@ if uploaded_file is not None:
             st.subheader("File Preview")
             st.text_area("Content", st.session_state.text_content[:1000] + "..." if len(st.session_state.text_content) > 1000 else st.session_state.text_content, height=200)
             
-            # Chunk configuration section
-            st.header("Chunk Configuration")
-            col1, col2 = st.columns(2)
-
-            with col1:
-                chunk_size = st.slider("Chunk Size",
-                                       min_value = chunking_config.get("chunking").get("min_chunk_size"),
-                                       max_value = chunking_config.get("chunking").get("max_chunk_size"),
-                                       value = chunking_config.get("chunking").get("default_chunk_size"),
-                                       step = chunking_config.get("chunking").get("chunk_size_step"),
-                                       help = "Size of each chunk in characters")
-
-            with col2:
-                chunk_overlap = st.slider("Chunk Overlap",
-                                          min_value = chunking_config.get("chunking").get("min_chunk_overlap"),
-                                          max_value = chunking_config.get("chunking").get("max_chunk_overlap"),
-                                          value = chunking_config.get("chunking").get("default_chunk_overlap"),
-                                          step = chunking_config.get("chunking").get("chunk_overlap_step"),
-                                          help="Overlap between chunks in characters")
-
-            # Display configuration
-            st.info(f"Current configuration: Chunk Size = {chunk_size}, Chunk Overlap = {chunk_overlap}")
+            # Toggle for applying chunking
+            st.header("Chunking Options")
+            apply_chunking = st.toggle("Apply Chunking", value=True, help="Toggle to enable/disable chunking of the parsed content")
             
-            # Chunking simulation (only when button is pressed)
-            if st.button("Process Chunks"):
+            if apply_chunking:
+                # Chunk configuration section
+                st.header("Chunk Configuration")
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    chunk_size = st.slider("Chunk Size",
+                                           min_value = chunking_config.get("chunking").get("min_chunk_size"),
+                                           max_value = chunking_config.get("chunking").get("max_chunk_size"),
+                                           value = chunking_config.get("chunking").get("default_chunk_size"),
+                                           step = chunking_config.get("chunking").get("chunk_size_step"),
+                                           help = "Size of each chunk in characters")
+
+                with col2:
+                    chunk_overlap = st.slider("Chunk Overlap",
+                                              min_value = chunking_config.get("chunking").get("min_chunk_overlap"),
+                                              max_value = chunking_config.get("chunking").get("max_chunk_overlap"),
+                                              value = chunking_config.get("chunking").get("default_chunk_overlap"),
+                                              step = chunking_config.get("chunking").get("chunk_overlap_step"),
+                                              help="Overlap between chunks in characters")
+
+                # Display configuration
+                st.info(f"Current configuration: Chunk Size = {chunk_size}, Chunk Overlap = {chunk_overlap}")
+            else:
+                st.info("Chunking is disabled. The entire parsed content will be stored as a single chunk.")
+            
+            # Process button (text changes based on toggle)
+            button_text = "Process Chunks" if apply_chunking else "Store Content"
+            if st.button(button_text):
                 # Validate that text_content is not empty
                 if st.session_state.text_content is None or len(st.session_state.text_content) == 0:
-                    st.error("Cannot process chunks: No text content available.")
+                    st.error("Cannot process content: No text content available.")
                     st.stop()
 
-                # Import chunking service
-                chunker_service = ChonkieChunkingService(config=ChonkieChunkingConfig(chunk_size = chunk_size,
-                                                                                      chunk_overlap = chunk_overlap,
-                                                                                      min_characters_per_chunk = chunking_config.get("chonkie").get("min_characters_per_chunk"),
-                                                                                      min_sentences_per_chunk = chunking_config.get("chonkie").get("min_sentences_per_chunk"),
-                                                                                      tokenizer = chunking_config.get("chonkie").get("tokenizer")))
-                
-                # Chunking
-                chunk_texts = chunker_service.split_text(st.session_state.text_content)
+                if apply_chunking:
+                    # Import chunking service
+                    chunker_service = ChonkieChunkingService(config=ChonkieChunkingConfig(chunk_size = chunk_size,
+                                                                                          chunk_overlap = chunk_overlap,
+                                                                                          min_characters_per_chunk = chunking_config.get("chonkie").get("min_characters_per_chunk"),
+                                                                                          min_sentences_per_chunk = chunking_config.get("chonkie").get("min_sentences_per_chunk"),
+                                                                                          tokenizer = chunking_config.get("chonkie").get("tokenizer")))
+                    
+                    # Chunking
+                    chunk_texts = chunker_service.split_text(st.session_state.text_content)
 
-                # Store chunk data in session state for analysis
-                chunk_data = []
-                for i, text in enumerate(chunk_texts, 1):
-                    chunk_data.append({
-                        'chunk_id': i,
-                        'text': text,
-                        'length': len(text),
-                        'preview': text[:50] + "..." if len(text) > 50 else text
-                    })
-                st.session_state.chunk_data = chunk_data
-                
-                st.subheader(f"Generated Chunks ({len(chunk_texts)} total)")
-                
-                for i, chunk in enumerate(chunk_texts[:5]):  # Show first 5 chunks
-                    with st.expander(f"Chunk {i+1} (Length: {len(chunk)})"):
-                        st.text_area(f"Chunk {i+1} Content", chunk, height=150, key=f"chunk_{i}")
-                
-                if len(chunk_texts) > 5:
-                    st.info(f"Showing first 5 of {len(chunk_texts)} chunks")
-                
-                # Chunk Analysis Section
-                st.markdown("---")
-                st.header("Chunk Analysis Dashboard")
-                
-                # Metrics section
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.metric("Total Chunks", len(chunk_data))
-                
-                with col2:
-                    avg_length = sum([chunk['length'] for chunk in chunk_data]) / len(chunk_data)
-                    st.metric("Average Length", f"{avg_length:.0f}")
-                
-                with col3:
-                    max_length = max([chunk['length'] for chunk in chunk_data])
-                    st.metric("Max Length", max_length)
-                
-                with col4:
-                    min_length = min([chunk['length'] for chunk in chunk_data])
-                    st.metric("Min Length", min_length)
-                
-                # Visualization section
-                st.subheader("Visualizations")
-                
-                # Chunk length distribution
-                col1, col2 = st.columns(2)
-                with col1:
-                    fig1 = px.histogram(
-                        chunk_data,
-                        x='length',
-                        nbins=20,
-                        title="Chunk Length Distribution"
-                    )
-                    fig1.update_layout(height=400)
-                    st.plotly_chart(fig1, width='stretch')
-                
-                with col2:
-                    fig2 = px.scatter(
-                        chunk_data,
-                        x='chunk_id',
-                        y='length',
-                        title="Chunk Length by Position",
-                        labels={'chunk_id': 'Chunk Number', 'length': 'Length (characters)'}
-                    )
-                    fig2.update_layout(height=400)
-                    st.plotly_chart(fig2, width='stretch')
+                    # Store chunk data in session state for analysis
+                    chunk_data = []
+                    for i, text in enumerate(chunk_texts, 1):
+                        chunk_data.append({
+                            'chunk_id': i,
+                            'text': text,
+                            'length': len(text),
+                            'preview': text[:50] + "..." if len(text) > 50 else text
+                        })
+                    st.session_state.chunk_data = chunk_data
+                    
+                    st.subheader(f"Generated Chunks ({len(chunk_texts)} total)")
+                    
+                    for i, chunk in enumerate(chunk_texts[:5]):  # Show first 5 chunks
+                        with st.expander(f"Chunk {i+1} (Length: {len(chunk)})"):
+                            st.text_area(f"Chunk {i+1} Content", chunk, height=150, key=f"chunk_{i}")
+                    
+                    if len(chunk_texts) > 5:
+                        st.info(f"Showing first 5 of {len(chunk_texts)} chunks")
+                    
+                    # Chunk Analysis Section
+                    st.markdown("---")
+                    st.header("Chunk Analysis Dashboard")
+                    
+                    # Metrics section
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("Total Chunks", len(chunk_data))
+                    
+                    with col2:
+                        avg_length = sum([chunk['length'] for chunk in chunk_data]) / len(chunk_data)
+                        st.metric("Average Length", f"{avg_length:.0f}")
+                    
+                    with col3:
+                        max_length = max([chunk['length'] for chunk in chunk_data])
+                        st.metric("Max Length", max_length)
+                    
+                    with col4:
+                        min_length = min([chunk['length'] for chunk in chunk_data])
+                        st.metric("Min Length", min_length)
+                    
+                    # Visualization section
+                    st.subheader("Visualizations")
+                    
+                    # Chunk length distribution
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        fig1 = px.histogram(
+                            chunk_data,
+                            x='length',
+                            nbins=20,
+                            title="Chunk Length Distribution"
+                        )
+                        fig1.update_layout(height=400)
+                        st.plotly_chart(fig1, width='stretch')
+                    
+                    with col2:
+                        fig2 = px.scatter(
+                            chunk_data,
+                            x='chunk_id',
+                            y='length',
+                            title="Chunk Length by Position",
+                            labels={'chunk_id': 'Chunk Number', 'length': 'Length (characters)'}
+                        )
+                        fig2.update_layout(height=400)
+                        st.plotly_chart(fig2, width='stretch')
+                else:
+                    # No chunking - store entire content as single chunk
+                    chunk_data = [{
+                        'chunk_id': 1,
+                        'text': st.session_state.text_content,
+                        'length': len(st.session_state.text_content),
+                        'preview': st.session_state.text_content[:50] + "..." if len(st.session_state.text_content) > 50 else st.session_state.text_content
+                    }]
+                    st.session_state.chunk_data = chunk_data
+                    st.success("Content stored successfully without chunking!")
+                    st.subheader("Stored Content")
+                    
+                    with st.expander(f"Full Content (Length: {len(st.session_state.text_content)} characters)"):
+                        st.text_area("Content", st.session_state.text_content, height=300)
+                    
+                    # Basic metrics for non-chunked content
+                    st.markdown("---")
+                    st.header("Content Summary")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.metric("Total Characters", len(st.session_state.text_content))
+                    
+                    with col2:
+                        word_count = len(st.session_state.text_content.split())
+                        st.metric("Word Count", word_count)
         else:
             st.warning("No content found in the uploaded file. Please try uploading a different file.")
 else:
