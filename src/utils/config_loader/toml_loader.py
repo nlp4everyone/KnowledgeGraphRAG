@@ -52,3 +52,10 @@ class TomlConfigLoader:
             Dictionary containing chunking parameters.
         """
         return self._load(toml_filename="pdfparser_config.toml")
+    
+    def get_llm_config(self):
+        """Get LLM configuration section.
+        Returns:
+            Dictionary containing LLM parameters.
+        """
+        return self._load(toml_filename="llm_config.toml")
