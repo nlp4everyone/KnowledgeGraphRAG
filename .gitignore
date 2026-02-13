@@ -3,7 +3,10 @@
 Diaochan - Wikipedia.pdf
 pages/__pycache__/
 src/core/__pycache__
+src/schemas/llm/__pycache__
 src/schemas/chunking/__pycache__
 src/services/chunkers/__pycache__
 src/services/parsers/__pycache__
 src/services/parsers/pdf/__pycache__
+src/services/llm/__pycache__
+src/utils/config_loader/__pycache__/
